@@ -1,0 +1,130 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Asset {
+  id                   Int       @id @default(autoincrement())
+  asset_tag            String    @unique
+  serial_number        String
+  model                String
+  category             String    @default("Laptop")
+  assigned_to_email    String?
+  assigned_to_name     String?
+  department           String?
+  location             String?
+  status               String    @default("in_use")
+  purchase_date        String?
+  warranty_expiry_date String?
+  eol_date             String?
+  notes                String?
+  last_ticket_id       String?
+  last_ticket_title    String?
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @default(now()) @updatedAt
+
+  sync_logs            SyncLog[]
+
+  @@index([asset_tag])
+  @@index([serial_number])
+  @@index([status])
+  @@index([assigned_to_email])
+  @@index([warranty_expiry_date])
+  @@map("assets")
+}
+
+model Rule {
+  id               String    @id
+  name             String
+  description      String?
+  source           String    @default("any")
+  direction        String    @default("ticket_to_asset")
+  event_type       String
+  conditions_json  String    @default("{}")
+  actions_json     String    @default("{}")
+  is_enabled       Boolean   @default(true)
+  execution_count  Int       @default(0)
+  last_executed_at DateTime?
+  created_at       DateTime  @default(now())
+
+  @@index([direction, is_enabled, source, event_type])
+  @@map("rules")
+}
+
+model SyncLog {
+  id             Int      @id @default(autoincrement())
+  timestamp      DateTime @default(now())
+  direction      String
+  rule_id        String?
+  rule_name      String?
+  source         String
+  ticket_id      String?
+  ticket_title   String?
+  asset_id       Int?
+  asset          Asset?   @relation(fields: [asset_id], references: [id], onDelete: SetNull)
+  asset_tag      String?
+  serial_number  String?
+  action_summary String
+  diff_json      String   @default("{}")
+  status         String   @default("success")
+  error_message  String?
+
+  @@index([timestamp])
+  @@index([ticket_id])
+  @@index([asset_id, direction, status])
+  @@map("sync_logs")
+}
+
+model ConnectorConfig {
+  id                       String    @id
+  name                     String
+  is_enabled               Boolean   @default(true)
+  base_url                 String    @default("")
+  api_key_or_token         String    @default("")
+  email_or_user            String    @default("")
+  project_or_workspace_key String    @default("")
+  webhook_secret           String    @default("")
+  mock_mode                Boolean   @default(true)
+  last_sync_at             DateTime?
+  status                   String    @default("mock_active")
+
+  @@map("connectors")
+}
+
+model CachedTicket {
+  id               Int      @id @default(autoincrement())
+  source           String
+  ticket_key       String
+  title            String
+  status           String
+  ticket_type      String
+  requester_email  String?
+  requester_name   String?
+  serial_number    String?
+  asset_tag        String?
+  raw_payload_json String   @default("{}")
+  created_at       DateTime @default(now())
+  updated_at       DateTime @default(now()) @updatedAt
+
+  @@index([ticket_key])
+  @@index([requester_email])
+  @@map("cached_tickets")
+}
+
+model Notification {
+  id         Int      @id @default(autoincrement())
+  title      String
+  message    String
+  severity   String   @default("INFO")
+  category   String   @default("general")
+  link_tab   String?
+  is_read    Int      @default(0)
+  created_at DateTime @default(now())
+
+  @@index([created_at])
+  @@map("notifications")
+}

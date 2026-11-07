@@ -1,0 +1,130 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Asset {
+  id                   Int       @id @default(autoincrement())
+  asset_tag            String    @unique @db.VarChar(64)
+  serial_number        String    @db.VarChar(128)
+  model                String    @db.VarChar(255)
+  category             String    @default("Laptop") @db.VarChar(64)
+  assigned_to_email    String?   @db.VarChar(255)
+  assigned_to_name     String?   @db.VarChar(255)
+  department           String?   @db.VarChar(128)
+  location             String?   @db.VarChar(255)
+  status               String    @default("in_use") @db.VarChar(32)
+  purchase_date        String?   @db.VarChar(32)
+  warranty_expiry_date String?   @db.VarChar(32)
+  eol_date             String?   @db.VarChar(32)
+  notes                String?   @db.Text
+  last_ticket_id       String?   @db.VarChar(64)
+  last_ticket_title    String?   @db.VarChar(500)
+  created_at           DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+
+  sync_logs            SyncLog[]
+
+  @@index([asset_tag])
+  @@index([serial_number])
+  @@index([status])
+  @@index([assigned_to_email])
+  @@index([warranty_expiry_date])
+  @@map("assets")
+}
+
+model Rule {
+  id               String    @id @db.VarChar(128)
+  name             String    @db.VarChar(255)
+  description      String?   @db.Text
+  source           String    @default("any") @db.VarChar(64)
+  direction        String    @default("ticket_to_asset") @db.VarChar(32)
+  event_type       String    @db.VarChar(64)
+  conditions_json  String    @default("{}") @db.Text
+  actions_json     String    @default("{}") @db.Text
+  is_enabled       Boolean   @default(true)
+  execution_count  Int       @default(0)
+  last_executed_at DateTime? @db.Timestamptz(6)
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([direction, is_enabled, source, event_type])
+  @@map("rules")
+}
+
+model SyncLog {
+  id             Int      @id @default(autoincrement())
+  timestamp      DateTime @default(now()) @db.Timestamptz(6)
+  direction      String   @db.VarChar(32)
+  rule_id        String?  @db.VarChar(128)
+  rule_name      String?  @db.VarChar(255)
+  source         String   @db.VarChar(64)
+  ticket_id      String?  @db.VarChar(64)
+  ticket_title   String?  @db.VarChar(500)
+  asset_id       Int?
+  asset          Asset?   @relation(fields: [asset_id], references: [id], onDelete: SetNull)
+  asset_tag      String?  @db.VarChar(64)
+  serial_number  String?  @db.VarChar(128)
+  action_summary String   @db.Text
+  diff_json      String   @default("{}") @db.Text
+  status         String   @default("success") @db.VarChar(32)
+  error_message  String?  @db.Text
+
+  @@index([timestamp(sort: Desc)])
+  @@index([ticket_id])
+  @@index([asset_id, direction, status])
+  @@map("sync_logs")
+}
+
+model ConnectorConfig {
+  id                       String    @id @db.VarChar(64)
+  name                     String    @db.VarChar(255)
+  is_enabled               Boolean   @default(true)
+  base_url                 String    @default("") @db.VarChar(500)
+  api_key_or_token         String    @default("") @db.Text
+  email_or_user            String    @default("") @db.VarChar(255)
+  project_or_workspace_key String    @default("") @db.VarChar(64)
+  webhook_secret           String    @default("") @db.VarChar(255)
+  mock_mode                Boolean   @default(true)
+  last_sync_at             DateTime? @db.Timestamptz(6)
+  status                   String    @default("mock_active") @db.VarChar(32)
+
+  @@map("connectors")
+}
+
+model CachedTicket {
+  id               Int      @id @default(autoincrement())
+  source           String   @db.VarChar(64)
+  ticket_key       String   @db.VarChar(64)
+  title            String   @db.VarChar(500)
+  status           String   @db.VarChar(64)
+  ticket_type      String   @db.VarChar(64)
+  requester_email  String?  @db.VarChar(255)
+  requester_name   String?  @db.VarChar(255)
+  serial_number    String?  @db.VarChar(128)
+  asset_tag        String?  @db.VarChar(64)
+  raw_payload_json String   @default("{}") @db.Text
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([ticket_key])
+  @@index([requester_email])
+  @@map("cached_tickets")
+}
+
+model Notification {
+  id         Int      @id @default(autoincrement())
+  title      String   @db.VarChar(255)
+  message    String   @db.Text
+  severity   String   @default("INFO") @db.VarChar(32)
+  category   String   @default("general") @db.VarChar(64)
+  link_tab   String?  @db.VarChar(64)
+  is_read    Int      @default(0)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([created_at(sort: Desc)])
+  @@map("notifications")
+}

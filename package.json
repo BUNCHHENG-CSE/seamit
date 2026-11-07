@@ -1,0 +1,52 @@
+{
+  "name": "tct-seamit",
+  "version": "2.4.0",
+  "private": true,
+  "description": "TCT-SeamIT — Next-Gen ITSM ⇄ ITAM Automated Seam Reconciler (Next.js Full-Stack)",
+  "scripts": {
+    "dev": "bun run prisma:prepare && next dev",
+    "build": "bun run prisma:prepare && next build",
+    "start": "next start",
+    "lint": "eslint",
+    "prisma:prepare": "bun run scripts/prisma-prepare.ts",
+    "prisma:generate": "bun run prisma:prepare && prisma generate",
+    "prisma:push": "bun run prisma:prepare && prisma db push",
+    "prisma:push:pg": "bun run scripts/prisma-prepare.ts && prisma db push --schema=prisma/schema.postgresql.prisma",
+    "db:seed": "bun run src/lib/seed.ts"
+  },
+  "dependencies": {
+    "@base-ui/react": "^1.9.0",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "@prisma/client": "^6.4.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "cn": "^0.5.1",
+    "lucide-react": "^1.65.0",
+    "next": "16.4.3",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "shadcn": "^4.23.0",
+    "tailwind-merge": "^3.7.0",
+    "tw-animate-css": "^1.4.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/turbopack": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.3",
+    "prisma": "^6.4.1",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  },
+  "packageManager": "bun@1.4.0",
+  "ignoreScripts": [
+    "sharp",
+    "unrs-resolver"
+  ],
+  "trustedDependencies": [
+    "sharp",
+    "unrs-resolver"
+  ]
+}
